@@ -1,15 +1,19 @@
 # Agent preset requirement-confirm: the `standard` composition plus a
 # confirm-before-execute requirement questionnaire.
 #
-# Installed as a profile bundle layer, this patch inserts one
-# `@deepseek-ai/dsh-agent-preset` declaration. Everything the shipped `standard`
-# preset mounts (0.2.1-rc.1 / 0.2.1-rc.2; the shipped preset is identical in both)
-# is kept, with two changes:
+# Installed as a profile bundle layer, this patch contributes two things:
 #
-#   * the persona prefix carries the requirement-confirmation workflow;
-#   * `@deepseek-ai/dsh-tool-ask-user` is disabled and replaced by this package's
-#     own `ask_user_question` row, whose schema adds the per-question `detail`
-#     explanation the shipped schema does not expose.
+#   1. one `@deepseek-ai/dsh-agent-preset` declaration — the `requirement-confirm`
+#      preset. Everything the shipped `standard` preset mounts (0.2.1-rc.1 /
+#      0.2.1-rc.2; the shipped preset is identical in both) is kept, with two
+#      changes: the persona prefix carries the requirement-confirmation workflow,
+#      and `@deepseek-ai/dsh-tool-ask-user` is disabled in favour of this
+#      package's own `ask_user_question` row (`lib/tool.js`), whose schema adds
+#      the per-question `detail` explanation the shipped schema does not expose.
+#   2. one bundle-level row for this package itself. Its host half
+#      (`lib/index.js`) is inert; the row exists so the client module graph
+#      attaches the browser half (`lib/client.js`, package.json `dsh.client`),
+#      which styles the per-question explanation under the question title.
 #
 # Edits saved from the Web preset editor override this row's `config.plugins` by
 # row id from the profile patch, exactly like a shipped preset.
@@ -130,12 +134,13 @@
               - id: tool-workflow
                 name: '@deepseek-ai/dsh-tool-workflow'
           # The shipped tool cannot carry a per-question explanation; this
-          # package's row registers the same tool name with `detail` added.
+          # package's row registers the same tool name with `detail` added
+          # (`lib/tool.js`, resolved through the package's `./tool` export).
           - id: tool-ask-user
             name: '@deepseek-ai/dsh-tool-ask-user'
             disabled: true
           - id: tool-requirement-questionnaire
-            name: dsh-preset-requirement-confirm
+            name: dsh-preset-requirement-confirm/tool
           - id: tool-todo
             name: '@deepseek-ai/dsh-tool-todo'
             config:
@@ -153,3 +158,9 @@
           - id: tool-plugin-market
             name: '@deepseek-ai/dsh-plugin-market/tools'
             disabled: true
+# Bundle-level row: inert host half (lib/index.js); attaches the browser half
+# (lib/client.js) declared under package.json `dsh.client`.
+- insert:
+    - id: client-ui-requirement-questionnaire
+      name: dsh-preset-requirement-confirm
+      config: {}

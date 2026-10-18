@@ -1,27 +1,38 @@
 {
   "name": "dsh-preset-requirement-confirm",
-  "version": "1.1.1",
-  "description": "DSH agent preset: decompose a request into sub-requirements, confirm them through an ask_user_question questionnaire (multi-option, free text, per-question plain-language detail), then execute.",
+  "version": "1.2.0",
+  "description": "DSH agent preset: decompose a request into sub-requirements, confirm them through an ask_user_question questionnaire (multi-option, free text, per-question plain-language detail), then execute. The browser half aligns and grays the per-question explanation under the question title.",
   "license": "MIT",
   "private": true,
   "type": "module",
+  "main": "lib/index.js",
   "engines": {
     "node": ">=22.19.0"
   },
   "exports": {
     ".": "./lib/index.js",
+    "./tool": "./lib/tool.js",
+    "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
     "lib",
+    "tools",
     "cordis.patch.yml",
     "README.md"
   ],
+  "scripts": {
+    "test": "node tools/validate.mjs"
+  },
   "dsh": {
     "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
     }
   }
 }

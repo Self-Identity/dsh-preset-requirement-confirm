@@ -2,27 +2,45 @@
 
 给 DSH 官方客户端增加一个 **需求确认** Agent 预设：收到需求后先把需求拆解成多个子需求，用一次 `ask_user_question` 问卷让用户逐题确认（多选项、可多选、可手动填写、每题带通俗解释），用户提交之后才开始执行。
 
-这是一个 **bundle 插件包**：安装进 profile 后，它插入一行 `@deepseek-ai/dsh-agent-preset` 声明，新会话的预设选择器里就会出现「需求确认」。
+这是一个 **bundle 插件包**，含两部分：
+
+- **Agent 预设**（host）：插入一行 `@deepseek-ai/dsh-agent-preset` 声明，新会话的预设选择器里出现「需求确认」；自带一个注册同名 `ask_user_question` 的工具（schema 多一个每题可选的 `detail`）。
+- **浏览器样式**（client）：把问卷标题下方的解释文本左右各内缩 24px（与标题左对齐），并把颜色改为与选项释义同款的灰（`--dsw-alias-label-tertiary`）。
 
 > **适配版本：DSH 官方桌面端 0.2.1-rc.1 / 0.2.1-rc.2**（两者随包的契约文件逐字节一致）。
 
 ## 安装（官方客户端）
 
 1. 打开 DSH 官方客户端 → 侧边栏 **插件（Plugins）**；
-2. **添加插件（Add plugin）** → 填**本目录的绝对路径**：
-   `F:\DSH-Official-Plugins\dsh-preset-requirement-confirm`
+2. **添加插件（Add plugin）** → 填**源码目录的绝对路径**：
+   `F:\plugins-for-dsh\dsh-preset-requirement-confirm`
 3. 安装完成后确认卡片开关为**已启用**、状态为**已挂载**；提示「下次启动生效」时重启客户端；
 4. 新建会话，在预设选择器里选**需求确认**。
 
-> ⚠️ **不要把本目录（或指向它的 junction）放进 `F:\DSH-Official` 里面。** 客户端更新会递归清理自己的安装目录；如果那里存在指向本目录的 junction，清理可能**穿透 junction 清空本目录的内容**（详见下节）。
+> ⚠️ **不要把本目录（或指向它的 junction）放进 `F:\DSH-Official`。** 客户端更新会递归清理自己的安装目录；如果那里存在指向本目录的 junction，清理会**跟随 junction 清空本目录内容**（本机已发生两次）。
 
-## 为什么源码会"丢失"（重要）
+## 问卷样式（client 半区，v1.2.0 起）
 
-**现象**：把插件源码迁到 `F:\DSH-Official-Plugins` 后，更新客户端，四个插件目录还在，但**内容是空的**（目录最后修改时间正好是安装更新的时刻）。
+官方问卷卡片（`dsh-client-ui-user-questions`）把每题的 `detail` 渲染为卡片滚动区里**第一个不带 `role` 的子元素**，而官方样式只给它 `margin: 0 2px 8px`、没有左右内边距：
 
-**原因**：迁移时仍在 `F:\DSH-Official\plugins` 里保留了指向源码目录的 **junction**（目录联接）。更新器清理安装目录时做的是递归删除；Windows 上某些递归删除实现（典型是 PowerShell 5.1 的 `Remove-Item -Recurse`）**会跟随 junction 进入目标目录**，把 `F:\DSH-Official-Plugins\<插件>` 的内容删掉——junction 只是"不见了"，源码目录被清空。
+- 标题位于 header，左内边距 **24px**，因此解释文本原先贴着卡片左边（2px），与标题不对齐；
+- 选项释义使用 `--dsw-alias-label-tertiary` 灰。
 
-**正确做法**：`F:\DSH-Official` 里**什么都不放**。插件源码只放 `F:\DSH-Official-Plugins`，安装时让客户端把 profile 的 `link:` 依赖**直接指向源码目录**（`link:F:/DSH-Official-Plugins/<包名>`）——这样更新器只会动 `F:\DSH-Official`，碰不到源码。另外源码目录务必另存一份版本库/压缩包：任何"链接式安装"在递归删除面前都可能连带受损。
+本插件的浏览器半区（`lib/client.js`）注入一条样式（`<style data-plugin="dsh-preset-requirement-confirm">`）：
+
+```css
+[data-question-scroll] > div:first-child:not([role]) {
+  margin-inline: 0;
+  padding-inline: 24px;
+  color: var(--dsw-alias-label-tertiary);
+}
+```
+
+- 左内边距 24px 让解释文本**与标题对齐**，右侧同样留 24px 空白；
+- 颜色改为选项释义同款灰；
+- 选择器用**结构锚点**而不是 class 名——卡片 class 是每次构建变化的 CSS Module 哈希，而 `data-question-scroll`、无 `role` 的解释块、带 `role` 的选项块在各版本稳定；题目没有 `detail` 时第一个子元素就是选项块（带 `role`），不会误伤。
+
+样式注入挂在插件 fiber 上：禁用插件或热重载时自动移除，不会残留。
 
 ## 使用
 
@@ -36,7 +54,7 @@
 对齐 0.2.1-rc.1/rc.2 的 standard 预设行，只做两处改动：
 
 - persona 的 `prefix` 增加「需求确认工作流」四步（拆解 → 问卷 → 等待确认 → 授权说明）；
-- 禁用出厂的 `@deepseek-ai/dsh-tool-ask-user` 行，改由本包注册**同名** `ask_user_question` 工具，schema 多一个每题可选的 `detail`。
+- 禁用出厂的 `@deepseek-ai/dsh-tool-ask-user` 行，改由本包 `./tool` 注册**同名** `ask_user_question` 工具，schema 多一个每题可选的 `detail`。
 
 其余行与出厂 standard 完全一致（persona、agent-instructions、time-context、bash/pwsh、fs、jobs、schedule、skill、goal、计划模式、压缩、委派与 workflow-ptc、todo、web、present、plugin-manager、plugin-market）。
 
@@ -44,26 +62,23 @@
 
 ## 已验证 / 未验证
 
-已在本机用官方运行时验证（0.2.1-rc.2）：
+已在本机验证（0.2.1-rc.2）：
 
-- `node --check lib/index.js` 通过；
-- 补丁层结构合法（顶层数组、行 id 唯一、kebab-case）；
-- 补丁引用的每个 `@deepseek-ai/*` 包都存在于 0.2.1-rc.2 的 `app.asar`；
-- `lib/index.js` 契约冒烟测试：注册名 `ask_user_question`、`output.schema` + `output.render` 满足官方 `register()` 校验、schema 含 `detail`、`execute` 把 `detail`/`header`/`options`/`multiSelect` 透传给 `ctx.userQuestions.ask()`、拒绝重复问题 id、原样返回答案。
+- `node --check` 通过（`lib/index.js`、`lib/tool.js`、`lib/client.js`）；
+- 清单/补丁结构：`dsh.bundle.patch`、`dsh.client.platform = web`、导出 `.` / `./tool` / `./client` 齐全；补丁两层 insert，行 id 唯一；
+- Host 冒烟：bundle 行无副作用；`./tool` 注册 `ask_user_question`（含 `detail`、重复 id 拒绝）；
+- Client 冒烟：注入的 `<style>` 内容/选择器正确，`ctx.effect` 清理时移除节点，重复 apply 不重复插入；
+- 样式锚点对照官方 0.2.1-rc.2 bundle：`data-question-scroll`、解释块为第一个无 `role` 子元素、选项释义用 `--dsw-alias-label-tertiary`、标题左内边距 24px —— 均存在；
+- `check-bundle.mjs`：problem=0。
 
-**未验证：真实挂载。** 验证预设真正挂载需要启动 Web 应用（会开端口），本机不重复起服务；以客户端启用后的「已挂载」状态为准。
+**未验证：真实浏览器渲染。** 视觉结果需要重启客户端后打开一次问卷确认（见下）。若样式未生效，先确认插件页显示「已挂载」，并强制刷新页面（`Ctrl+F5`）。
 
 ## 已知限制
 
-- **「请详细说明」在官方客户端是内联展示**：官方问卷卡片把 `detail` 直接渲染在问题下方，没有折叠按钮；折叠交互属于上游 UI 能力。
-- **审批解释不是独立折叠区**：官方审批面板展示请求方文案与关联工具详情；本插件通过 persona 要求模型写清楚 `justification`，不修改客户端代码。
+- **选择器依赖卡片结构**：若未来客户端改掉 `data-question-scroll` 或调整子元素顺序，样式会静默失效（不会报错，也不会破坏布局）；届时按新版 bundle 重新校准选择器即可。
+- **只影响通用问卷卡片**：计划评审卡、已作答回放卡不使用 `data-question-scroll`，不受影响。
 - **预设是软约束**：模型仍可能跳过问卷直接执行；需要硬性拦截请配合沙箱与审批策略。
-- **工具行的解析兜底**：工具行用裸包名（`dsh-preset-requirement-confirm`）。若某次部署无法解析，可改成显式文件 URL：
-  ```yaml
-  - id: tool-requirement-questionnaire
-    name: 'file:///F:/DSH-Official-Plugins/dsh-preset-requirement-confirm/lib/index.js'
-  ```
-  或删掉该行并去掉 `tool-ask-user` 的 `disabled: true`（回到出厂工具，代价是没有 `detail`）。
+- **审批解释不是独立折叠区**：官方审批面板展示请求方文案与关联工具详情；本插件通过 persona 要求模型写清楚 `justification`，不修改客户端代码。
 
 ## 卸载
 
@@ -73,10 +88,12 @@
 
 ```
 dsh-preset-requirement-confirm/
-├── package.json         # 声明 dsh.bundle.patch，指向下面这个补丁层
-├── cordis.patch.yml     # 插入 preset 行（含全部 standard 行 + 本包工具行）
-├── lib/index.js         # 零依赖插件：注册带 detail 的 ask_user_question
+├── package.json         # dsh.bundle.patch（host 补丁）+ dsh.client（浏览器半区）
+├── cordis.patch.yml     # 预设声明 + bundle 级行
+├── lib/index.js         # bundle 行的 host 半区：无副作用
+├── lib/tool.js          # 预设行：注册带 detail 的 ask_user_question
+├── lib/client.js        # 浏览器半区：问卷解释文本的对齐与配色
 └── README.md
 ```
 
-`lib/index.js` **不 import 任何 `@deepseek-ai/*` 包**：本机 `$DSH_HOME/profiles/node_modules` 可能指向另一份检出，裸导入会加载第二份运行时模块。因此它只用 `ctx.tools.register()`（原始定义形状）与 `ctx.userQuestions.ask()`。
+所有 JS 都**不 import 任何 `@deepseek-ai/*` 包**：本机 `$DSH_HOME/profiles/node_modules` 可能指向另一份检出，裸导入会加载第二份运行时模块。host 只用 `ctx.tools.register()`（原始定义形状）与 `ctx.userQuestions.ask()`；client 只用 `window.__ModuleLoader__` 与 DOM。
