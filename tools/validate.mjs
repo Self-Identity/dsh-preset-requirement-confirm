@@ -48,6 +48,9 @@ check('bundle patch declared', manifest.dsh?.bundle?.patch === './cordis.patch.y
 check('client platform web', manifest.dsh?.client?.platform === 'web')
 check('exports . / ./tool / ./client', ['.', './tool', './client'].every((key) => typeof manifest.exports?.[key] === 'string'))
 check('entry files exist', ['.', './tool', './client'].every((key) => fs.existsSync(path.join(ROOT, manifest.exports[key]))))
+check('icon declared and present', manifest.icon === './icon.svg' && fs.existsSync(path.join(ROOT, 'icon.svg')) && fs.readFileSync(path.join(ROOT, 'icon.svg'), 'utf8').trimStart().startsWith('<svg'))
+check('locale exports declared', ['./locale/en.json', './locale/zh.json'].every((key) => typeof manifest.exports?.[key] === 'string'))
+check('files include locale and icon', Array.isArray(manifest.files) && manifest.files.includes('locale') && manifest.files.includes('icon.svg'))
 
 const JsTag = new yaml.Type('tag:yaml.org,2002:js', { kind: 'scalar' })
 const patch = yaml.load(fs.readFileSync(path.join(ROOT, 'cordis.patch.yml'), 'utf8'), {
@@ -61,7 +64,7 @@ check('preset row', presetRow.id === 'preset-requirement-confirm' && presetRow.n
 check('bundle row names the package root', bundleRow.id === 'client-ui-requirement-questionnaire' && bundleRow.name === PKG)
 
 const preset = presetRow.config
-check('preset identity', preset.id === 'requirement-confirm' && preset.order === 5 && preset.name === '需求确认')
+check('preset identity', preset.id === 'requirement-confirm' && preset.order === 5 && String(preset.name).startsWith('需求确认'))
 const collect = (rows, out = []) => {
   for (const row of rows) {
     if (row === null || typeof row !== 'object') continue
@@ -76,6 +79,8 @@ check('row ids unique', new Set(ids).size === ids.length)
 check('tool row uses ./tool', presetRows.find((row) => row.id === 'tool-requirement-questionnaire')?.name === `${PKG}/tool`)
 check('shipped ask-user disabled', presetRows.find((row) => row.id === 'tool-ask-user')?.disabled === true)
 check('persona workflow kept', String(preset.plugins[0].config.prefix).includes('需求确认工作流'))
+check('preset name is bilingual', String(preset.name).includes('需求确认') && String(preset.name).includes('Requirement Confirmation'))
+check('preset description is bilingual and carries the flow', String(preset.description).includes('用法') && String(preset.description).includes('Standard mode plus confirm-before-execute'))
 
 const host = await import(pathToFileURL(path.join(ROOT, 'lib/index.js')).href)
 check('bundle host half inert', host.name === 'preset-requirement-confirm-host' && host.apply() === undefined)
@@ -152,6 +157,13 @@ if (officialPath !== undefined) {
     && official.indexOf('css_default.detail') < official.indexOf('css_default.options')
     && official.includes('role: question.multiSelect === true ? "group" : "radiogroup"'))
 }
+
+const localeZh = JSON.parse(fs.readFileSync(path.join(ROOT, 'locale/zh.json'), 'utf8'))
+const localeEn = JSON.parse(fs.readFileSync(path.join(ROOT, 'locale/en.json'), 'utf8'))
+check('zh metadata title', localeZh.meta?.title === '需求确认')
+check('en metadata title', localeEn.meta?.title === 'Requirement Confirmation')
+check('metadata descriptions carry the usage flow', String(localeZh.meta?.description).includes('使用流程') && String(localeEn.meta?.description).includes('Usage'))
+check('metadata descriptions are language-specific', localeZh.meta?.description !== localeEn.meta?.description)
 
 const failed = checks.filter((entry) => !entry.ok).length
 console.log(`\n${failed === 0 ? 'VALIDATE PASS' : `VALIDATE FAIL (${failed})`}`)

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Requirement Confirmation",
+    "description": "Standard mode plus confirm-before-execute. Usage: start a session in this mode, describe your task, answer the questionnaire the agent sends (choices, multi-select, free text, a plain-language explanation per question), then submit — the agent executes only after your answers. The browser half aligns each explanation with its question title and paints it in the option-description gray."
+  }
+}

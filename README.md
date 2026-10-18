@@ -9,6 +9,8 @@
 
 > **适配版本：DSH 官方桌面端 0.2.1-rc.1 / 0.2.1-rc.2**（两者随包的契约文件逐字节一致）。
 
+**English**: *Requirement Confirmation* — the standard coding agent plus a confirm-before-execute questionnaire. Usage: create a session in this mode → describe the task → answer the questionnaire (choices, multi-select, free text, a plain-language explanation per question) → submit → the agent executes. The browser half aligns each explanation with its question title and paints it in the option-description gray.
+
 ## 安装（官方客户端）
 
 1. 打开 DSH 官方客户端 → 侧边栏 **插件（Plugins）**；
@@ -72,6 +74,16 @@
 - `check-bundle.mjs`：problem=0。
 
 **未验证：真实浏览器渲染。** 视觉结果需要重启客户端后打开一次问卷确认（见下）。若样式未生效，先确认插件页显示「已挂载」，并强制刷新页面（`Ctrl+F5`）。
+
+## 元数据与双语（v1.3.0）
+
+插件页的标题与描述来自 `locale/<language>.json` 的 `meta.title` / `meta.description`，按当前界面语言选择，英文回退到 `package.json` 的 `name` / `description`：
+
+- `locale/zh.json` —— `需求确认` + 中文介绍（含使用流程）；
+- `locale/en.json` —— `Requirement Confirmation` + English description (with the usage flow)；
+- `package.json` 的 `description` 是英文回退；`icon.svg` 是插件页图标。
+
+预设选择器里的名称/描述由 `cordis.patch.yml` 提供。官方只翻译出厂预设；用户自建预设的元数据不会被翻译，所以预设名与描述写成「中文（English）」形式。
 
 ## 已知限制
 

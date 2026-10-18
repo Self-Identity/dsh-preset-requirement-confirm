@@ -23,8 +23,8 @@
       config:
         id: requirement-confirm
         order: 5
-        name: 需求确认
-        description: 在标准模式基础上：先把需求拆解为多题问卷（含「以上皆可」与手动填写，每题带通俗解释），确认后才执行。
+        name: 需求确认（Requirement Confirmation）
+        description: '在标准模式基础上：先拆解需求并用问卷逐题确认（含「以上皆可」与手动填写，每题带通俗解释），确认后才执行。用法：描述任务 → 回答问卷 → 提交后执行。 / Standard mode plus confirm-before-execute; usage: describe the task, answer the questionnaire, then it executes.'
         plugins:
           - id: persona
             name: '@deepseek-ai/dsh-persona'

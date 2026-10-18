@@ -1,11 +1,12 @@
 {
   "name": "dsh-preset-requirement-confirm",
-  "version": "1.2.0",
-  "description": "DSH agent preset: decompose a request into sub-requirements, confirm them through an ask_user_question questionnaire (multi-option, free text, per-question plain-language detail), then execute. The browser half aligns and grays the per-question explanation under the question title.",
+  "version": "1.3.0",
+  "description": "Standard mode plus confirm-before-execute. Usage: start a session in this mode, describe the task, answer the questionnaire the agent sends (choices, multi-select, free text, a plain-language explanation per question), then submit; the agent executes only after the answers. The browser half aligns each explanation with its question title and paints it in the option-description gray.",
   "license": "MIT",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
+  "icon": "./icon.svg",
   "engines": {
     "node": ">=22.19.0"
   },
@@ -14,12 +15,17 @@
     "./tool": "./lib/tool.js",
     "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/en.json": "./locale/en.json",
+    "./locale/zh.json": "./locale/zh.json",
+    "./icon.svg": "./icon.svg",
     "./package.json": "./package.json"
   },
   "files": [
     "lib",
     "tools",
+    "locale",
     "cordis.patch.yml",
+    "icon.svg",
     "README.md"
   ],
   "scripts": {
