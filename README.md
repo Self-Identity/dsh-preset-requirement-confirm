@@ -1,5 +1,8 @@
 # dsh-preset-requirement-confirm
 
+[![npm](https://img.shields.io/npm/v/dsh-preset-requirement-confirm.svg)](https://www.npmjs.com/package/dsh-preset-requirement-confirm)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A DSH agent preset that confirms the requirement before executing: the agent splits the request into sub-requirements, asks one questionnaire (choices, multi-select, free text, a plain-language explanation per question), and only starts working after you submit it.
 
 给 DSH 客户端增加「需求确认」预设：先拆解需求、用问卷逐题确认，用户提交后才执行。
@@ -16,7 +19,7 @@ The package is a bundle with two halves:
 ## Install
 
 1. Client sidebar → **Plugins** → **Add plugin**.
-2. Choose this package: the local source directory, or the npm package name once published.
+2. Enter `dsh-preset-requirement-confirm@1.3.0` (or choose the local source directory).
 3. **Install** → **Enable now**; restart the client if it says the change takes effect on the next start.
 4. Open a new session and pick **Requirement Confirmation** in the preset selector.
 
@@ -93,3 +96,5 @@ node tools/validate.mjs
 ## License
 
 MIT.
+
+Not affiliated with DeepSeek. 与 DeepSeek 官方无隶属关系。
