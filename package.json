@@ -3,12 +3,21 @@
   "version": "1.3.0",
   "description": "Standard mode plus confirm-before-execute. Usage: start a session in this mode, describe the task, answer the questionnaire the agent sends (choices, multi-select, free text, a plain-language explanation per question), then submit; the agent executes only after the answers. The browser half aligns each explanation with its question title and paints it in the option-description gray.",
   "license": "MIT",
-  "private": true,
+  "author": "Self-Identity",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Self-Identity/dsh-preset-requirement-confirm.git"
+  },
+  "homepage": "https://github.com/Self-Identity/dsh-preset-requirement-confirm#readme",
+  "bugs": {
+    "url": "https://github.com/Self-Identity/dsh-preset-requirement-confirm/issues"
+  },
   "type": "module",
   "main": "lib/index.js",
   "icon": "./icon.svg",
   "engines": {
-    "node": ">=22.19.0"
+    "node": ">=22.19.0",
+    "dsh": ">=0.2.1-rc.2 <0.3.0"
   },
   "exports": {
     ".": "./lib/index.js",
@@ -26,7 +35,9 @@
     "locale",
     "cordis.patch.yml",
     "icon.svg",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "scripts": {
     "test": "node tools/validate.mjs"
