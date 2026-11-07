@@ -10,16 +10,16 @@
 这个包是一个组合包，包含两半：
 
 - **Agent 预设（host）**：插入一行 `@deepseek-ai/dsh-agent-preset`，预设选择器里出现 **需求确认**。它同时通过 `./tool` 注册 `ask_user_question` 工具，schema 多一个每题可选的 `detail`。
-- **浏览器样式（client）**：把每题的说明文本左右内缩 24px，与题目标题对齐，并使用选项释义的灰色。
+- **浏览器样式（client）**：把每题的说明文本刷成选项释义的灰色（左右 24px 内缩由 0.2.2 客户端自带的卡片样式负责）。
 
-> 目标客户端：DSH 桌面端 **0.2.1-rc.1 / 0.2.1-rc.2**。
+> 目标客户端：DSH 桌面端 **0.2.2-rc.1**（1.4.0 起；1.3.0 及更早适配 0.2.1-rc.x，在 0.2.2 上预设会因引用了已删除的 `/list-agents` 子路径而整份挂载失败、从模式选择器里消失）。
 
 **用法**：用这个模式新建会话 → 描述任务 → 回答模型发来的问卷并提交。模型只在提交后执行；需要授权的操作会在审批面板显示模型写的 `justification`。
 
 ## 安装
 
 1. 客户端侧边栏 → **插件** → **添加插件**。
-2. 填 `dsh-preset-requirement-confirm@1.3.0`（或选择本地源码目录）。
+2. 填 `dsh-preset-requirement-confirm@1.4.0`（或选择本地源码目录）。
 3. **安装** → **立即启用**；若提示「改动在下次启动生效」，重启客户端。
 4. 新建会话，在预设选择器里选 **需求确认**。
 
@@ -32,30 +32,30 @@
 
 ## 与出厂 `standard` 预设的差异
 
-对齐 0.2.1-rc.1 / rc.2 的 `standard` 组合，只做两处改动：
+对齐 **0.2.2-rc.1** 的 `standard` 组合，只做两处改动：
 
 - persona 的 `prefix` 增加四步工作流（拆解 → 问卷 → 等待确认 → 授权说明）；
 - 禁用出厂的 `@deepseek-ai/dsh-tool-ask-user` 行，由本包的 `./tool` 注册**同名**工具，schema 多一个可选的 `detail` 字段。
 
-其余行与 `standard` 完全一致（persona、agent-instructions、time-context、bash/pwsh、fs、jobs、schedule、skill、goal、计划模式、压缩、委派与 workflow-ptc、todo、web、present、plugin-manager、plugin-market）。
+其余行与 `standard` 完全一致（persona、agent-instructions、time-context、bash/pwsh、fs（`applyPatch: false`）、jobs、schedule、skill、goal、计划模式、压缩、委派与 workflow-ptc（`modelSelection` + `modelDiscovery`）、todo、web、present、plugin-manager、plugin-market）。`tools/validate.mjs` 会直接读取当前客户端的 `standard.patch.yml` 做逐行比对，客户升级导致组合漂移时会报错，而不会静默丢行。
 
 同名注册是刻意的：问卷卡片与工具行靠 `ask_user_question` 这个名字关联，改名会破坏「关闭卡片后从工具行重新打开」等集成。
 
 ## 为什么需要浏览器半区
 
-出厂问卷卡片（`dsh-client-ui-user-questions`）把每题的 `detail` 渲染成卡片滚动区里第一个不带 `role` 的子元素，但样式只给它 `margin: 0 2px 8px`，没有左右内边距，于是说明文本贴着卡片边缘，而标题内缩了 24px。
+0.2.2 的问卷卡片（`dsh-client-ui-user-questions`）滚动区结构是：第一个子元素是**题目标题块**，第二个才是每题的 `detail` 说明块，第三个是带 `role` 的选项块。客户端已给说明块 `margin: 0 24px 8px`，与标题块的 `margin: 5px 24px 0` 内缩一致，因此**对齐已由客户端自带**；说明块仍继承卡片的主文字色。
 
-浏览器半区注入一条规则：
+浏览器半区只补一条规则：
 
 ```css
-[data-question-scroll] > div:first-child:not([role]) {
-  margin-inline: 0;
-  padding-inline: 24px;
+[data-question-scroll] > div:nth-child(2):not([role]) {
   color: var(--dsw-alias-label-tertiary);
 }
 ```
 
-选择器锚定结构而不是 class 名：CSS Module 的 class 名每次构建都会变，而 `data-question-scroll`、不带 `role` 的说明块、带 `role` 的选项块是稳定的。没有 `detail` 的题目，第一个子元素就是选项块（带 `role`），因此规则不会误伤。样式节点挂在插件 fiber 上，禁用或重载时自动移除。
+选择器锚定结构而不是 class 名：CSS Module 的 class 名每次构建都会变，而 `data-question-scroll`、子元素顺序、不带 `role` 的说明块、带 `role` 的选项块是稳定的。没有 `detail` 的题目，第二个子元素是选项块（带 `role`），因此规则不会误伤。样式节点挂在插件 fiber 上，禁用或重载时自动移除。
+
+> 注意：1.3.0 的 `> div:first-child:not([role])` 规则不能沿用。0.2.2 起第一个子元素是标题块，旧规则会把标题刷成灰色并再内缩 24px。
 
 ## 已知限制
 
@@ -66,7 +66,9 @@
 
 ## 兼容性
 
-目标客户端 **0.2.1-rc.2**。全部 JavaScript 都不 import `@deepseek-ai/*`：host 半区只用 `ctx.tools.register()` 与 `ctx.userQuestions.ask()`，client 半区只用浏览器模块加载器与 DOM。
+目标客户端 **0.2.2-rc.1**（`package.json` 的 `engines.dsh` 声明为 `>=0.2.2-rc.1 <0.3.0`）。全部 JavaScript 都不 import `@deepseek-ai/*`：host 半区只用 `ctx.tools.register()` 与 `ctx.userQuestions.ask()`，client 半区只用浏览器模块加载器与 DOM。
+
+已在 0.2.2-rc.1 上核对：`ask_user_question` 的旧版（`legacy`）请求/结果形状未变、`register()` 仍接受原始定义（`parameters` JSON Schema + `output { schema, render }`）、`userQuestions` 仍接受并回传 `detail`、`dsh.client` 清单字段（`platform` / `immediately`）与 `window.__ModuleLoader__.load` 包装未变。
 
 ## 目录结构
 
@@ -76,7 +78,7 @@ dsh-preset-requirement-confirm/
 ├── cordis.patch.yml     # 预设声明 + bundle 级行
 ├── lib/index.js         # bundle 行 host 半区：惰性
 ├── lib/tool.js          # 预设行：注册带 detail 的 ask_user_question
-├── lib/client.js        # 浏览器半区：说明文本对齐与配色
+├── lib/client.js        # 浏览器半区：说明文本配色
 └── README.md
 ```
 
@@ -90,8 +92,10 @@ dsh-preset-requirement-confirm/
 node --check lib/index.js
 node --check lib/tool.js
 node --check lib/client.js
-node tools/validate.mjs
+node tools/validate.mjs   # 读取 app.asar：行名可解析性 + 与当前 standard 逐行比对 + 问卷卡结构锚点
 ```
+
+`tools/validate.mjs` 默认读取 `F:\DSH-Official\resources\app.asar`；换机器或客户端升级后可用 `--asar <路径>` 指定，或用 `--official <已提取的问卷卡 client.js>` 只跑卡片结构检查。
 
 ## 许可
 
